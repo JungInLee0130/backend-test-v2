@@ -1,0 +1,22 @@
+spring:
+  config:
+    import: optional:env-dev.yml
+
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://localhost:3306/pgdb # 도커설정 포트, DB이름 확인하기
+    username: ${MARIADB_USER}               # 도커에 설정한 username, password
+    password: ${MARIADB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc.time_zone: UTC
+
+
+logging:
+  level:
+    org.hibernate.SQL: debug
