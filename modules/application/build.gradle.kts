@@ -1,3 +1,8 @@
+plugins {
+    kotlin("jvm")
+    // @Service, @Transactional 상속
+    kotlin("plugin.spring")
+}
 tasks.jar {
     enabled = true
 }
@@ -10,4 +15,5 @@ dependencies {
     implementation(projects.modules.domain)
     // Only need Spring annotations (@Service) for this module
     implementation("org.springframework:spring-context")
+    implementation("org.springframework:spring-tx")
 }

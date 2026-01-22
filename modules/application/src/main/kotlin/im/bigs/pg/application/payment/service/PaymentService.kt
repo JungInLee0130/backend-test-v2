@@ -2,8 +2,8 @@ package im.bigs.pg.application.payment.service
 
 import im.bigs.pg.application.partner.port.out.FeePolicyOutPort
 import im.bigs.pg.application.partner.port.out.PartnerOutPort
-import im.bigs.pg.application.payment.port.`in`.PaymentUseCase
 import im.bigs.pg.application.payment.port.`in`.PaymentCommand
+import im.bigs.pg.application.payment.port.`in`.PaymentUseCase
 import im.bigs.pg.application.payment.port.out.PaymentOutPort
 import im.bigs.pg.application.pg.port.out.PgApproveRequest
 import im.bigs.pg.application.pg.port.out.PgClientOutPort
@@ -11,6 +11,8 @@ import im.bigs.pg.domain.calculation.FeeCalculator
 import im.bigs.pg.domain.payment.Payment
 import im.bigs.pg.domain.payment.PaymentStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 /**
  * 결제 생성 유스케이스 구현체.
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service
  * - 수수료 정책 조회 및 적용(계산)은 도메인 유틸리티를 통해 수행합니다.
  */
 @Service
+@Transactional(readOnly = true)
 class PaymentService(
     private val partnerRepository: PartnerOutPort,
     private val feePolicyRepository: FeePolicyOutPort,
@@ -29,6 +32,7 @@ class PaymentService(
      * - 현재 예시 구현은 하드코드된 수수료(3% + 100)로 계산합니다.
      * - 과제: 제휴사별 수수료 정책을 적용하도록 개선해 보세요.
      */
+    @Transactional
     override fun pay(command: PaymentCommand): Payment {
         val partner = partnerRepository.findById(command.partnerId)
             ?: throw IllegalArgumentException("Partner not found: ${command.partnerId}")
@@ -41,18 +45,24 @@ class PaymentService(
             PgApproveRequest(
                 partnerId = partner.id,
                 amount = command.amount,
+                cardNumber = command.cardNumber,
                 cardBin = command.cardBin,
                 cardLast4 = command.cardLast4,
                 productName = command.productName,
+                birthDate = command.birthDate,  // 생년월일 8자리
+                expiry = command.expiry,        // 유효기간 4자리 (YYMM)
+                password = command.password,    // 비밀번호 앞 2자리
             ),
         )
-        val hardcodedRate = java.math.BigDecimal("0.0300")
-        val hardcodedFixed = java.math.BigDecimal("100")
-        val (fee, net) = FeeCalculator.calculateFee(command.amount, hardcodedRate, hardcodedFixed)
+        val now = LocalDateTime.now()
+        val feePolicy = feePolicyRepository.findEffectivePolicy(partnerId = command.partnerId, now)
+            ?: throw NoSuchElementException("제휴사 ID : ${partner.id}에 대해 $now 시점에 유효한 feePolicy가 존재하지않습니다.");
+        // 수수료, 정산금 계산
+        val (fee, net) = FeeCalculator.calculateFee(command.amount, feePolicy.percentage, feePolicy.fixedFee)
         val payment = Payment(
             partnerId = partner.id,
             amount = command.amount,
-            appliedFeeRate = hardcodedRate,
+            appliedFeeRate = feePolicy.percentage,
             feeAmount = fee,
             netAmount = net,
             cardBin = command.cardBin,

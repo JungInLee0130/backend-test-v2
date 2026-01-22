@@ -16,6 +16,11 @@ spring:
         format_sql: false
         jdbc.time_zone: UTC
 
+pg:
+  test:
+    api-key: ${API_KEY}
+    iv-base64-url: ${IV_BASE64_URL}
+
 
 logging:
   level:

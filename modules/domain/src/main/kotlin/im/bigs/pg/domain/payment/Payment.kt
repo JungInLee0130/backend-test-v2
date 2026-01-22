@@ -2,6 +2,7 @@ package im.bigs.pg.domain.payment
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 /**
@@ -39,7 +40,41 @@ data class Payment(
     val createdAt: LocalDateTime = LocalDateTime.now(),
     @get:JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     val updatedAt: LocalDateTime = LocalDateTime.now(),
-)
+) {
+    companion object {
+        fun createApprovedPayment(
+            partnerId: Long,
+            amount: BigDecimal,
+            feeRate: BigDecimal,
+            approvalCode: String,
+            approvedAt: LocalDateTime,
+            cardNumber: String? = null
+        ) : Payment {
+            // 1. 수수료 계산 (금액 * 수수료율)
+            val feeAmount = amount.multiply(feeRate).setScale(0, RoundingMode.HALF_UP)
+
+            // 2. 정산금 계산 (금액 - 수수료)
+            val netAmount = amount.subtract(feeAmount)
+
+            // 3. 카드 정보 마스킹 (BIN: 앞 6자리, Last4: 뒤 4자리)
+            val cardBin = cardNumber?.take(6)
+            val cardLast4 = cardNumber?.takeLast(4)
+
+            return Payment(
+                partnerId = partnerId,
+                amount = amount,
+                appliedFeeRate = feeRate,
+                feeAmount = feeAmount,
+                netAmount = netAmount,
+                cardBin = cardBin,
+                cardLast4 = cardLast4,
+                approvalCode = approvalCode,
+                approvedAt = approvedAt,
+                status = PaymentStatus.APPROVED
+            )
+        }
+    }
+}
 
 /** 결제 상태. 취소 시에도 원본 행을 유지하고 상태만 변경하는 방식 등을 고려합니다. */
 /** 결제 상태.

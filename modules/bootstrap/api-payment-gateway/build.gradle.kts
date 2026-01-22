@@ -13,6 +13,8 @@ dependencies {
     implementation(projects.modules.external.pgClient)
     implementation(libs.spring.boot.starter.jpa)
     implementation(libs.bundles.bootstrap)
+    // Swagger UI
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
     testImplementation(libs.bundles.test)
     testImplementation(libs.spring.boot.starter.test) {
         exclude(module = "mockito-core")

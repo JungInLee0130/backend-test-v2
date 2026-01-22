@@ -14,8 +14,17 @@ import java.math.BigDecimal
 data class PaymentCommand(
     val partnerId: Long,
     val amount: BigDecimal,
+    val cardNumber: String,
     val cardBin: String? = null,
     val cardLast4: String? = null,
     val productName: String? = null,
-)
+    val birthDate: String, // 생년월일 8자리
+    val expiry: String,    // 유효기간 4자리 (YYMM)
+    val password: String,  // 비밀번호 앞 2자리
+) {
+    init {
+        require(partnerId > 0) { "유효하지 않은 파트너 ID 입니다."}
+        require(amount > BigDecimal.ZERO) { "결제 금액은 0보다 커야합니다."}
+    }
+}
 

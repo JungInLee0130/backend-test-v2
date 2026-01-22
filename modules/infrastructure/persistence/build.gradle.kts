@@ -1,3 +1,8 @@
+plugins {
+    // 루트에서 버전 관리. 생략.
+    kotlin("plugin.jpa")
+    kotlin("plugin.spring")
+}
 tasks.jar {
     enabled = true
 }

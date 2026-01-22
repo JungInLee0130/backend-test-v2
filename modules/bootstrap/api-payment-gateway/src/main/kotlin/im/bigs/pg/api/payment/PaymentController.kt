@@ -7,6 +7,8 @@ import im.bigs.pg.api.payment.dto.CreatePaymentRequest
 import im.bigs.pg.api.payment.dto.PaymentResponse
 import im.bigs.pg.api.payment.dto.QueryResponse
 import im.bigs.pg.api.payment.dto.Summary
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -17,12 +19,14 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
+import kotlin.String
 
 /**
  * 결제 API 진입점.
  * - POST: 결제 생성
  * - GET: 결제 조회(커서 페이지네이션 + 통계)
  */
+@Tag(name = "Payment API", description = "결제 API")
 @RestController
 @RequestMapping("/api/v1/payments")
 @Validated
@@ -43,15 +47,20 @@ class PaymentController(
      * @param req 결제 요청 본문
      * @return 생성된 결제 요약 응답
      */
+    @Operation(summary = "결제 생성", description = "외부 PG와 연동하여 결제를 생성합니다.")
     @PostMapping
     fun create(@RequestBody req: CreatePaymentRequest): ResponseEntity<PaymentResponse> {
         val saved = paymentUseCase.pay(
             PaymentCommand(
                 partnerId = req.partnerId,
                 amount = req.amount,
+                cardNumber = req.cardNumber,
                 cardBin = req.cardBin,
                 cardLast4 = req.cardLast4,
                 productName = req.productName,
+                birthDate = req.birthDate,  // 생년월일 8자리
+                expiry = req.expiry,        // 유효기간 4자리 (YYMM)
+                password = req.password,    // 비밀번호 앞 2자리
             ),
         )
         return ResponseEntity.ok(PaymentResponse.from(saved))
